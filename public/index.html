@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexus Living Agent</title>
+<style>
+:root{
+  --bg:#050914;--card:rgba(12,22,39,.86);--line:rgba(102,232,255,.16);
+  --text:#edf7ff;--muted:#9db1c4;--cyan:#66e8ff;--blue:#2aa8ff;
+  --green:#62f2a0;--gold:#f5c86a;--red:#ff6b83;--shadow:0 20px 60px rgba(0,0,0,.42)
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);min-height:100vh;background:
+radial-gradient(circle at top left,rgba(102,232,255,.16),transparent 30rem),
+radial-gradient(circle at 80% 20%,rgba(245,200,106,.1),transparent 27rem),
+linear-gradient(135deg,#050914,#02040a 75%)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:
+linear-gradient(rgba(102,232,255,.06) 1px,transparent 1px),
+linear-gradient(90deg,rgba(102,232,255,.06) 1px,transparent 1px);background-size:42px 42px}
+.wrap{width:min(1380px,calc(100% - 26px));margin:auto;padding:26px 0 42px;position:relative}
+.hero,.panel{border:1px solid var(--line);background:linear-gradient(180deg,rgba(13,24,43,.92),rgba(7,14,26,.86));border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(14px)}
+.hero{padding:28px;margin-bottom:18px;display:grid;grid-template-columns:1.3fr .7fr;gap:18px;align-items:center}
+.badge{display:inline-flex;gap:8px;align-items:center;color:var(--cyan);border:1px solid rgba(102,232,255,.22);background:rgba(102,232,255,.08);padding:8px 12px;border-radius:999px;font-weight:900;font-size:13px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{transform:scale(1.35);opacity:1}0%,100%{transform:scale(.9);opacity:.45}}
+h1{font-size:clamp(34px,5vw,62px);line-height:.95;margin:14px 0 10px;letter-spacing:-2.5px}
+.sub{color:var(--muted);line-height:1.65;margin:0;max-width:850px}
+.brain{padding:16px;border-radius:20px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);line-height:1.65;color:var(--muted)}
+.brain b{color:var(--text)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.panel{padding:20px}
+h2{font-size:18px;margin:0 0 14px}.num{color:var(--cyan)}
+textarea{width:100%;min-height:155px;resize:vertical;border-radius:18px;border:1px solid rgba(102,232,255,.18);background:rgba(4,9,18,.72);color:var(--text);padding:15px;font-size:15px;line-height:1.6;outline:none}
+textarea:focus{border-color:rgba(102,232,255,.55);box-shadow:0 0 0 4px rgba(102,232,255,.08)}
+button{border:0;border-radius:14px;padding:12px 15px;font-weight:900;cursor:pointer;color:#04101a;background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 12px 28px rgba(42,168,255,.22);margin:5px 5px 5px 0}
+button.secondary{color:var(--text);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);box-shadow:none}
+button.danger{color:#fff;background:linear-gradient(135deg,var(--red),#a91134)}
+button.safe{background:linear-gradient(135deg,var(--green),#1fb768)}
+button.partial{background:linear-gradient(135deg,var(--gold),#d98721)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat,.item{padding:14px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);line-height:1.55;color:var(--muted);margin-bottom:10px}
+.stat b{display:block;color:var(--text);font-size:22px}.stat small{font-weight:800}
+.item strong{color:var(--text)}
+.chip{display:inline-flex;margin:4px 5px 4px 0;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:900}
+.cyan{background:rgba(102,232,255,.11);color:var(--cyan);border:1px solid rgba(102,232,255,.18)}
+.gold{background:rgba(245,200,106,.11);color:var(--gold);border:1px solid rgba(245,200,106,.18)}
+.green{background:rgba(98,242,160,.1);color:var(--green);border:1px solid rgba(98,242,160,.18)}
+.red{background:rgba(255,107,131,.11);color:var(--red);border:1px solid rgba(255,107,131,.18)}
+.empty{color:var(--muted);border:1px dashed rgba(255,255,255,.13);border-radius:18px;padding:18px;text-align:center}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cyan);font-size:12px}
+.log{max-height:410px;overflow:auto}
+.log-entry{padding:12px 12px 12px 16px;border-left:3px solid rgba(102,232,255,.45);background:rgba(255,255,255,.04);border-radius:14px;margin-bottom:10px;color:var(--muted);line-height:1.5}
+@media(max-width:980px){.hero,.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.wrap{width:calc(100% - 16px);padding-top:12px}.hero,.panel{border-radius:20px;padding:16px}.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+  <div>
+    <div class="badge"><span class="pulse"></span> NEXUS v0.4 • RENDER READY</div>
+    <h1>Nexus Living Agent</h1>
+    <p class="sub">Digital Pharmacy Organism with Groq brain, local pharmacy rules, memory, safety layer, and experience learning.</p>
+  </div>
+  <div class="brain">
+    <b>Brain:</b> Groq API<br>
+    <b>Memory:</b> Server JSON<br>
+    <b>Safety:</b> Educational pharmacy support, not clinical replacement<br>
+    <span class="mono" id="health">Checking server...</span>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h2><span class="num">01</span> Pharmacy Case</h2>
+    <textarea id="caseInput" placeholder="A 58-year-old hypertensive patient with uncontrolled blood pressure asks for pseudoephedrine tablets for nasal congestion. He is taking amlodipine and bisoprolol. No current BP reading is available."></textarea>
+    <button id="thinkBtn">Think with Nexus</button>
+    <button id="exampleBtn" class="secondary">Load Example</button>
+    <button id="resetBtn" class="danger">Reset Memory</button>
+  </div>
+
+  <div class="panel">
+    <h2><span class="num">02</span> Memory Stats</h2>
+    <div class="stats">
+      <div class="stat"><b id="casesSeen">0</b><small>Cases Seen</small></div>
+      <div class="stat"><b id="rules">0</b><small>Learned Rules</small></div>
+      <div class="stat"><b id="mistakes">0</b><small>Mistakes</small></div>
+      <div class="stat"><b id="danger">0</b><small>Danger Patterns</small></div>
+      <div class="stat"><b id="success">0</b><small>Success Patterns</small></div>
+      <div class="stat"><b id="corr">0</b><small>Corrections</small></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="num">03</span> Agent Analysis</h2>
+    <div id="analysis"><div class="empty">No analysis yet.</div></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="num">04</span> Teach Nexus</h2>
+    <div class="item">Rate the answer and add correction if needed. Nexus stores the experience in memory.</div>
+    <button data-rating="safe" class="safe">Safe / Correct</button>
+    <button data-rating="partial" class="partial">Partially Correct</button>
+    <button data-rating="unsafe" class="danger">Unsafe / Wrong</button>
+    <textarea id="correction" placeholder="Correction or lesson..."></textarea>
+    <button id="learnBtn">Store Experience</button>
+  </div>
+
+  <div class="panel">
+    <h2><span class="num">05</span> Local Rules & Memory Matches</h2>
+    <div id="matches"><div class="empty">No matches yet.</div></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="num">06</span> Experience Log</h2>
+    <div id="log" class="log"></div>
+  </div>
+</section>
+</main>
+
+<script>
+let currentCase = "";
+let currentAnalysis = null;
+let selectedRating = "";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[c]));
+const chip = (s, c="cyan") => `<span class="chip ${c}">${esc(s)}</span>`;
+
+async function api(url, options = {}) {
+  const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
+  const data = await res.json();
+  if (!res.ok) throw new Error((data.error || "API error") + (data.details ? " — " + data.details : ""));
+  return data;
+}
+
+function renderMemory(m) {
+  $("casesSeen").textContent = m.cases_seen || 0;
+  $("rules").textContent = (m.learned_rules || []).length;
+  $("mistakes").textContent = (m.mistakes || []).length;
+  $("danger").textContent = (m.danger_patterns || []).length;
+  $("success").textContent = (m.successful_patterns || []).length;
+  $("corr").textContent = (m.user_corrections || []).length;
+
+  const log = m.experience_log || [];
+  $("log").innerHTML = log.length ? log.slice(0, 30).map(x => `
+    <div class="log-entry">
+      <b>${esc((x.type || "log").toUpperCase())}</b> <span class="mono">${esc(x.at)}</span><br>
+      ${esc(x.case || "")}<br>
+      <small>${esc(x.lesson || x.model || "")}</small>
+    </div>
+  `).join("") : `<div class="empty">No experience yet.</div>`;
+}
+
+function renderAnalysis(a) {
+  $("analysis").innerHTML = `
+    <div class="item"><strong>Detected Drugs:</strong><br>${(a.detected_drugs || []).map(x => chip(x)).join("") || chip("None detected","gold")}</div>
+    <div class="item"><strong>Patient Factors:</strong><br>${(a.patient_factors || []).map(x => chip(x,"gold")).join("") || chip("Not enough context","gold")}</div>
+    <div class="item"><strong>Risk Patterns:</strong><br>${(a.risk_patterns || []).map(r => `
+      <div>${chip(r.severity || "risk", r.severity === "high" ? "red" : "gold")} <strong>${esc(r.pattern)}</strong>: ${esc(r.risk)}<br><small>${esc(r.reason || "")}</small></div>
+    `).join("") || chip("No major risk detected","green")}</div>
+    <div class="item"><strong>Missing Information:</strong><br>${(a.missing_information || []).map(x => chip(x,"gold")).join("") || chip("No obvious missing info","green")}</div>
+    <div class="item"><strong>Decision:</strong><br>${esc(a.decision)}</div>
+    <div class="item"><strong>Safer Alternatives:</strong><br>${(a.safer_alternatives || []).map(x => chip(x,"green")).join("") || chip("Not specified","gold")}</div>
+    <div class="item"><strong>Counseling:</strong><br>${(a.counseling || []).map(x => chip(x)).join("") || chip("Not specified","gold")}</div>
+    <div class="item"><strong>Follow-up Questions:</strong><br>${(a.follow_up_questions || []).map(x => chip(x)).join("") || chip("None","gold")}</div>
+    <div class="item"><strong>Confidence:</strong> <span class="mono">${esc(a.confidence)}%</span><br><strong>Memory Lesson:</strong> ${esc(a.memory_lesson)}<br><strong>Safety:</strong> ${esc(a.safety_note)}</div>
+  `;
+}
+
+function renderMatches(resp) {
+  const rules = resp?.localRules || [];
+  const mem = resp?.memoryMatches || [];
+
+  $("matches").innerHTML = `
+    <div class="item"><strong>Local Rules:</strong><br>${rules.length ? rules.map(r => `<div>${chip(r.pattern,"red")} ${esc(r.risk)}<br><small>${esc(r.recommendation || "")}</small></div>`).join("") : chip("No local rule matched","gold")}</div>
+    <div class="item"><strong>Memory Matches:</strong><br>${mem.length ? mem.map(m => `<div>${chip(m.pattern || "memory","green")} ${esc(m.lesson || "")}</div>`).join("") : chip("No memory match yet","gold")}</div>
+  `;
+}
+
+async function init() {
+  try {
+    const h = await api("/api/health");
+    $("health").textContent = `Server online • Model: ${h.model} • API key: ${h.has_key ? "found" : "missing"}`;
+  } catch {
+    $("health").textContent = "Server offline";
+  }
+
+  try {
+    renderMemory(await api("/api/memory"));
+  } catch {}
+}
+
+$("thinkBtn").onclick = async () => {
+  try {
+    currentCase = $("caseInput").value.trim();
+    if (!currentCase) return alert("Write a case first.");
+    $("analysis").innerHTML = `<div class="empty">Nexus is thinking...</div>`;
+
+    const resp = await api("/api/think", {
+      method: "POST",
+      body: JSON.stringify({ caseText: currentCase })
+    });
+
+    currentAnalysis = resp.analysis;
+    renderAnalysis(resp.analysis);
+    renderMatches(resp);
+    renderMemory(resp.memory);
+  } catch (e) {
+    $("analysis").innerHTML = `<div class="item"><strong>Error:</strong><br>${esc(e.message)}</div>`;
+  }
+};
+
+$("exampleBtn").onclick = () => {
+  $("caseInput").value = "A 58-year-old hypertensive patient with uncontrolled blood pressure asks for pseudoephedrine tablets for nasal congestion. He is taking amlodipine and bisoprolol. No current BP reading is available.";
+};
+
+document.querySelectorAll("[data-rating]").forEach(btn => {
+  btn.onclick = () => {
+    selectedRating = btn.dataset.rating;
+    document.querySelectorAll("[data-rating]").forEach(b => b.style.outline = "none");
+    btn.style.outline = "3px solid rgba(255,255,255,.45)";
+  };
+});
+
+$("learnBtn").onclick = async () => {
+  try {
+    if (!currentCase) currentCase = $("caseInput").value.trim();
+    if (!currentCase) return alert("Analyze a case first.");
+    if (!selectedRating) return alert("Choose a rating first.");
+
+    const resp = await api("/api/learn", {
+      method: "POST",
+      body: JSON.stringify({
+        caseText: currentCase,
+        rating: selectedRating,
+        correction: $("correction").value.trim(),
+        analysis: currentAnalysis
+      })
+    });
+
+    $("correction").value = "";
+    selectedRating = "";
+    document.querySelectorAll("[data-rating]").forEach(b => b.style.outline = "none");
+    renderMemory(resp.memory);
+    alert("Experience stored.");
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+$("resetBtn").onclick = async () => {
+  if (!confirm("Reset Nexus memory?")) return;
+  renderMemory(await api("/api/reset-memory", { method: "POST" }));
+  $("analysis").innerHTML = `<div class="empty">No analysis yet.</div>`;
+  $("matches").innerHTML = `<div class="empty">No matches yet.</div>`;
+};
+
+init();
+</script>
+</body>
+</html>
