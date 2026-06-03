@@ -1,0 +1,4 @@
+.env
+node_modules
+nexus-memory.json
+.DS_Store
