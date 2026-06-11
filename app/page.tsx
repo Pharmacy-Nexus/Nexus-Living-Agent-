@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sidebar } from '@/components/sidebar'
 import { ChatMessage, TypingIndicator } from '@/components/chat-message'
 import { MessageInput } from '@/components/message-input'
-import { generateMockResponse, newId, SAMPLE_HISTORY } from '@/lib/mock-data'
+import { newId, SAMPLE_HISTORY } from '@/lib/mock-data'
 import { exportChatToPdf } from '@/lib/export-pdf'
 import type { Attachment, ChatSession, Message } from '@/lib/types'
 
@@ -60,7 +60,7 @@ export default function Page() {
     setSessions((prev) => prev.map((s) => (s.id === activeId ? updater(s) : s)))
   }
 
-  const handleSend = (text: string, attachments: Attachment[]) => {
+  const handleSend = async (text: string, attachments: Attachment[]) => {
     const userMsg: Message = {
       id: newId('msg'),
       role: 'user',
@@ -69,26 +69,71 @@ export default function Page() {
       createdAt: Date.now(),
     }
 
-    updateActive((s) => ({
-      ...s,
-      title:
-        s.messages.length === 0 && text
-          ? text.slice(0, 48)
-          : s.title,
-      messages: [...s.messages, userMsg],
-    }))
+    const targetSessionId = activeId
+    const nextMessages = [...messages, userMsg]
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === targetSessionId
+          ? {
+              ...s,
+              title: s.messages.length === 0 && text ? text.slice(0, 48) : s.title,
+              messages: nextMessages,
+            }
+          : s,
+      ),
+    )
 
     setIsThinking(true)
-    setTimeout(() => {
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: nextMessages }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'AI request failed')
+      }
+
       const assistantMsg: Message = {
         id: newId('msg'),
         role: 'assistant',
-        structured: generateMockResponse(text || 'uploaded clinical document'),
+        structured: data.structured,
         createdAt: Date.now(),
       }
-      updateActive((s) => ({ ...s, messages: [...s.messages, assistantMsg] }))
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === targetSessionId
+            ? { ...s, messages: [...s.messages, assistantMsg] }
+            : s,
+        ),
+      )
+    } catch (error) {
+      const assistantMsg: Message = {
+        id: newId('msg'),
+        role: 'assistant',
+        content:
+          error instanceof Error
+            ? `AI connection error: ${error.message}`
+            : 'AI connection error. Please try again.',
+        createdAt: Date.now(),
+      }
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === targetSessionId
+            ? { ...s, messages: [...s.messages, assistantMsg] }
+            : s,
+        ),
+      )
+    } finally {
       setIsThinking(false)
-    }, 1100)
+    }
   }
 
   const handleNewChat = () => {
